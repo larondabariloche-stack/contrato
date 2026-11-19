@@ -36,6 +36,7 @@
 <header>
   <h1>🌿 Contrato de Afiliación</h1>
   <p>Asociación La Ronda — Adherente Beneficiario</p>
+  <p style="font-size:10px;color:#b0a894;margin-top:6px">versión 19/11 13:50</p>
 </header>
 
 <div class="card">
@@ -65,6 +66,7 @@
   <button id="enviardirecto" style="background:var(--dorado);color:#1c1408;width:100%;margin-top:10px">📨 Enviar directo a La Ronda</button>
   <a id="descargar" download="Contrato-La-Ronda-firmado.pdf" style="background:#eee9dc;color:#5a5344;margin-top:10px">⬇️ Descargar una copia</a>
   <p class="hint" style="margin-top:12px">Si el botón no abre WhatsApp, descargá el PDF y mandalo al 294 467-8570.</p>
+  <p id="estadoenvio" style="font-size:12px;margin-top:10px;color:#a33;word-break:break-word"></p>
 </div>
 
 <footer>La Ronda ONG Cannábica · Rivarola R. Dr. Pje. 111, piso 2, Dto. 6, CABA</footer>
@@ -214,6 +216,7 @@ document.getElementById('enviardirecto').onclick = async () => {
     alert('¡Listo! Tu contrato firmado llegó a La Ronda 🌿');
   } catch (e) {
     btn.disabled = false; btn.textContent = '📨 Reintentar envío directo';
+    document.getElementById('estadoenvio').textContent = 'Error técnico: ' + (e && e.message ? e.message : 'no se pudo conectar');
     alert('No se pudo enviar automáticamente. Usá "Compartir por WhatsApp" o descargá el PDF y mandalo al 294 467-8570.');
   }
 };
