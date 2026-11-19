@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Firmar contrato — La Ronda</title>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<style>
+  :root { --verde:#0d2d1a; --dorado:#d29914; --crema:#f7f3e8; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--crema); color:#222; padding:18px 16px 40px; }
+  header { text-align:center; margin-bottom:14px; }
+  header h1 { font-size:19px; color:var(--verde); margin:0 0 4px; }
+  header p { font-size:13px; color:#666; margin:0; }
+  .card { background:#fff; border-radius:14px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,.07); margin-bottom:14px; }
+  label { display:block; font-size:12.5px; font-weight:600; color:var(--verde); margin:10px 0 5px; }
+  input { width:100%; padding:12px; font-size:16px; border:1px solid #dcd6c6; border-radius:10px; background:#fdfcf8; }
+  input:focus { outline:none; border-color:var(--dorado); }
+  #padWrap { position:relative; }
+  #pad { width:100%; height:200px; border:2px dashed #cfc7b2; border-radius:12px; background:#fffef9; touch-action:none; display:block; }
+  .hint { font-size:12px; color:#888; text-align:center; margin-top:6px; }
+  .row { display:flex; gap:10px; margin-top:12px; }
+  button { flex:1; padding:14px; font-size:15px; font-weight:700; border:none; border-radius:12px; cursor:pointer; }
+  #limpiar { background:#eee9dc; color:#5a5344; flex:0 0 40%; }
+  #generar { background:var(--verde); color:#fff; }
+  #generar:disabled { opacity:.5; }
+  #resultado { display:none; text-align:center; }
+  #resultado a { display:inline-block; margin-top:10px; background:var(--dorado); color:#1c1408;
+                 padding:15px 22px; border-radius:12px; font-weight:800; text-decoration:none; font-size:16px; }
+  .ok { color:#1a7f37; font-weight:700; font-size:15px; }
+  footer { text-align:center; font-size:11px; color:#9a927f; margin-top:18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 Contrato de Afiliación</h1>
+  <p>Asociación La Ronda — Adherente Beneficiario</p>
+</header>
+
+<div class="card">
+  <label>Nombre y apellido</label>
+  <input id="nombre" placeholder="Ej: María González" autocomplete="name">
+  <label>DNI</label>
+  <input id="dni" inputmode="numeric" placeholder="Ej: 30123456">
+  <label>Domicilio</label>
+  <input id="domicilio" placeholder="Calle, número, localidad">
+  <label>Fecha</label>
+  <input id="fecha" type="date">
+</div>
+
+<div class="card">
+  <label>Firmá con el dedo</label>
+  <div id="padWrap"><canvas id="pad"></canvas></div>
+  <div class="hint">Dibujá tu firma dentro del recuadro</div>
+  <div class="row">
+    <button id="limpiar" type="button">Borrar</button>
+    <button id="generar" type="button">Generar contrato</button>
+  </div>
+</div>
+
+<div class="card" id="resultado">
+  <p class="ok">✅ ¡Listo! Tu contrato está firmado.</p>
+  <a id="descargar" download="Contrato-La-Ronda-firmado.pdf">⬇️ Descargar contrato firmado</a>
+  <p class="hint" style="margin-top:12px">Después mandanos el PDF por WhatsApp al 294 467-8570.</p>
+</div>
+
+<footer>La Ronda ONG Cannábica · Rivarola R. Dr. Pje. 111, piso 2, Dto. 6, CABA</footer>
+
+<script>
+const PDF_B64 = "JVBERi0xLjQKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEgL1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMgOSAwIFIgL01lZGlhQm94IFsgMCAwIDU5NS4yNzU2IDg0MS44ODk4IF0gL1BhcmVudCA4IDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9Db250ZW50cyAxMCAwIFIgL01lZGlhQm94IFsgMCAwIDU5NS4yNzU2IDg0MS44ODk4IF0gL1BhcmVudCA4IDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iago2IDAgb2JqCjw8Ci9QYWdlTW9kZSAvVXNlTm9uZSAvUGFnZXMgOCAwIFIgL1R5cGUgL0NhdGFsb2cKPj4KZW5kb2JqCjcgMCBvYmoKPDwKL0F1dGhvciAoQXNvY2lhY2lcMzYzbiBMYSBSb25kYSkgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MTExOTExMTY1Ny0wMycwMCcpIC9DcmVhdG9yIChcKHVuc3BlY2lmaWVkXCkpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MTExOTExMTY1Ny0wMycwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0IChcKHVuc3BlY2lmaWVkXCkpIC9UaXRsZSAoQ29udHJhdG8gZGUgQWZpbGlhY2lcMzYzbiAtIExhIFJvbmRhKSAvVHJhcHBlZCAvRmFsc2UKPj4KZW5kb2JqCjggMCBvYmoKPDwKL0NvdW50IDIgL0tpZHMgWyA0IDAgUiA1IDAgUiBdIC9UeXBlIC9QYWdlcwo+PgplbmRvYmoKOSAwIG9iago8PAovRmlsdGVyIFsgL0FTQ0lJODVEZWNvZGUgL0ZsYXRlRGVjb2RlIF0gL0xlbmd0aCAyNzQ2Cj4+CnN0cmVhbQpHYiEjXT5FQEsxJnE4MDFXKDUtakZral5qXUZmbS9PbGU+MjY8PHQ7ZF0wUGtbUltjcVp1KGg4SixORVVENlVQWztXYU0mTSVrcDltXVFEZGxEazokRCNEPnRzKUE4NEdtUFMtME9QQUFmPidNbEtCNTZpUVFMWypZWFhaPTN0WVFxPUVaW3A+UiQraUdTZ0FTT0AucjEvLitqMUdjaGRsVSE0XF5obU1eZm44TCU3bWlSdSM2SGM4P1UxU2JxW3JGUWBqJW1AXiJmcjtWSXU7RSMySVspXCklPU49TUMiPkZQOGgibGdpSFNyNFE1ZWozOHJpTl91KSNZR2IuLjEqYT9hUipYPGk+akduI0BpXygnQkJhWXVTS2EhRj8rYChfYF5fdCFwV0BTPTAwSCM/XXJzJFlaPVQ0O3VtRSJBQ1tjTjNvZSEnJFljSXA6LyI3KiZiTCsnTFI2SXIoSkg6Rms+ZERzOnVOR1dXTiFcJ244bUQqLUJoSEQ4QTZHaSpMKEMtPTNLNHJyUCpLQGpEQEdsaXEqR19wNF87byU9PmA+IVtFJldMQFFlRD1SNElKQENOXVQwWW1mInFIOV1zU0pJJUpXXT9ZNU1UR1ZPUCEhZ0NRIkJKSi0vbFZlJHVcMCZXYHFucUwhImw8P0Rialk4QHIxLGhtZUFWZ10sdD9xJDNYO2crN0hcZTdxPDIxYVpTaDpuMm8qVSQ4Qm1mLlI2YTYtQ1wrdU8nVis9VFxJdUcmP25BXTZMOzR0TzBFM3FbTz9DKGZjTzM5MyRDUlI1ayI1VDZtUTM9NCU3MCdPKDE6KWNOMTBuU2ExQnRNKSUoKEpyZU4wMyJIPFNLZmZzLURjL1FGREstQS9fTEk+XS9RRG1pLmBcIj5AW11UL0MuY0NcbVg0JGRRYXVCXTRYNTAqSSUzTyxuJTJxNDVmXSI4LmBBJV9oPlokXmVHWylgTi5YZT5aMWRfOmhZMkc/L1VmUjtKLmUjOilTJ1BLJm5VaDtpPXRYPE5rRClqSiZUVV1JJkcma2FabWFsWFNoKE87Pjc+amYxK1MvSS1PYyEpXDtJJiwzNTEpXjpjWElRJ19PakxOK1dzRVxKT1hYY1Q7NyZNcFk3YVJfdEhXbyI8NkVJc2kwSWE6JGNBYGljbk5iPU0iNmUlVToiXzVjJl4jVENgbDRwRVsycj5IWyknWk9wbz0vJTtpSls0Wz1hTjxqMWAkLHBIYnImbF8xZW80WCVFJlMvIVVba05BZHUxOT1SZyMtLjdSKVYyakwySnFxYTVlO2tnaCZXOjZXWjRlPV9Xb3VzbyNJRk1VTFhaZGk6UXNjIWNDPVBnJC41YzMkR1svSUFULlwtVUAkWV8tKkpKXCIwYTpAUV88VmEwVUZ1O0xVc14nMEtmKCNySjhIVToqOD5PKFtAX2lJJSRuKzVuVUw9ciRjIVdpNihxMXUpJihDMzJSOmBILGQrSjZEPzY7ajhEOmddPlU/VldxQDU/XCtbREJmKHFAKi0lRzFmVGpoSUxzXi8pTkM1bFVaYSYkJz5PcjldRlpoQjgrKV4xb0ZMQ1cvN2o9bS9BN05WNFxMSCZAQWlraVtpJU9mcVhwJGFMImMuQj8+VTA0RzI1Nzk3KiplTi5RVGJbXDNGQnElU0pLKm0iJmkoMWc5NUBQS3AkNilqTilMI21nUWtxVU1cZ2ouZShtZ0s2PGQ8MTZEMnNzTjVVU2cjODRCKiVAXVhBPzhmIm9KImc/OjAmRCF1KyRkc2NJTUc5cCVQRGZPPWZqUj9cckFcdUlcMz1dViJzKGJdOUwoJyI4Ok9NQSplYzNcUThqay5GIXNKS0JWR1ZEOTRKcycycmdmQDhJYDx0bignVEcqXk5XdTxrVm5WKmtTU3RbTiNmY2MkTi9XK2tMRHJBMGFEKVk9dT0yV28pYVxoQypWSUlwUGtkJz5tIlhbQjlZST4sPzdsKG9iME4yNlEpQ2xkQ04yOChydHM9RCZdTUx0UDZDTEJLWiY2ciw/QmJtQ29ZXEgkJkVHRTdQUEkrIyhYPDM7NkA4LT08TzFMYUVxMWsoYjkuKWkiJXE9YTcwRjNbdUBqU1NETFpjcSNuQipbJUxiNmVXR3MscV5GQzUhZ1o8UWNQc0NHL15xNVlGc2plNG9kTDNIW1c7KDsnWUpoK2IlVHJOKEVtKjdzRzMkM0RiYVY4KzpZcEA6QkhpL1A2NVVeQVRgcGk1QDUsJ244c0I6a09ycHIzSTJVVltOYGw1YTtWIiZOa0xyVmxxQWo/VS0lJjg6NDchSzhDLmVdQG0vTT4mOlFVW2NqPHIzT2gsTUpIVVVZPmc/PlRTajRcPDEmKUtKZ1huZW5HWSFuTmtHK0lbZ1YnREEiSFk5MFs+Ymc7RyhlQWpCSlclcGIxJ1RsTmNuPzc3LFR0WXQ1TlQ+YC1lKywvbiZnQ1FnKk48Z2hCUj5jSC4uSjkjI2pHNC1JZW5gQ0VaJWo8PVMkc2E0cjFgK2FuN0c/MTcvY3EkaGBtXC5SRmI8RzlzNkhZLW5tZj03XjdLJmJbNnJSLUZSOFUvTGQqbSJjSWs7bFgyWm5vR3U+XDVAUCwnMyVDREtkL2ZsQSJxOnNKU2UsVj1kJixhZ15db3NDVVFsQmwnNypbKGVybz5LO05ePjskTDprcUQmY15zVzllckQ6bz1EaWYpXVIxUWlfQyNfJUkjbFFxQUleL3ImZidwKF8sN0MjLi48NGIwMzhAYUNEQTMnSCtEVSReOlRKNjZCOGFfJGFgLyQ9RFpHUCxmUj1VWVo3NTQuPmI/Njc2cCw1MF5HPCZya1BiJUtSUTtAcV82Iyg3OFI+JTpxRVBFUzJtdS0+Lmo2PmFlTzooOT1BPGJtZmlJbDtuRUorM0F0OG1XYDNoU21gTFYkXExOKFQoc25BckRDX2suQ3NmWmUyQilFPWtoQkE9cVd1QHFfXzdlTTNpLTBSb15wMDBuby9DZWwmal5tQmpuRiN1Qk4vOFZjVFhyPTJRS2I7RWViIWhtTmdLYF5HNUMuP1o0V0pAXUYlNUhTYSYjXnRAWCVOKUpWOkpQYkpwUVp1aC9xTjUqXDs/aC9iSWNqUVBaUzRbRC9SQWU9dCpGKkFPakM8OCYkdUFxYTIubFk5VEhtR3QvIS1xbUkvcD4pK1tGN14tcGBLckVONC0zVTZkXF83Z2JaRDhNJys3PiFAZiZgXkQsXEJLblREcUlLczwoOyU6c1dyPV1zKDdsTlhbSUdybC5MTWwrPFo6XGAqaWBSNWNsLF5uKF5cI1BOYTckRkw7ZTtza2hFXGk/MlZVIzRMI3AvXU4ya0BGLHFfPVMwMTk8Tk8+XShWPjB0VE50MydZJnNSSDdabGhGMm5HJWUkOlhCJVZrPjwwXnQpbCxZPDlAJCRBcVBEMlVhLnIhI14iYEotJkBpWV1CUlduKk9AXjpZOShVQFdbZUs8UU0hRmYvbGJDN21sKFw/Mic4ZzZFZEA5cV5nUUEySk5iLSJpJlYiTiVjRDk2KC0vYG5GQT5hOT5oOFJpayNvVV9gOE5sR1ZqMyRjU2UwME9zTEBTNTU4cjUmVyVESkF0IkNpdEFjS0ZybkE/RytzTXBLdXUoXlQ0MDJka3JNKCYsdV86OGlKZ34+ZW5kc3RyZWFtCmVuZG9iagoxMCAwIG9iago8PAovRmlsdGVyIFsgL0FTQ0lJODVEZWNvZGUgL0ZsYXRlRGVjb2RlIF0gL0xlbmd0aCAxNzA2Cj4+CnN0cmVhbQpHYiIvJmdNWWIqJjpNbCtiW1wpIz1BbVlWRGVkXTkwImFvSXBzREBDODlAbWUsZUNSb2FGPSo1Ol91ZDBOPkIubmdGQSJqOyZtbExSNTlXKiEwMlFHSU81NjZnR1FXbTAwaE0kaExdXjckZ1NQPz5AMmNrQCVlZi4tTmBFNGokRG0kIVZbW1QnWVtxPWktUy1jSWN1PjU9WDQpJVRFJWMuUk1bJGFFZDUrWCo8YVMyJW9MKShvL1BHM0deNkthYT9dQT83a1thbyZJSlIpIVxXTmUsYWg5MU5WJGNnLmc+W0U5R01AYC1URjZFSWVqJnJXW3AqVydvdUthWVBlSWhaWXVqITNETyUmO19iZjpCYS1uWyJtaVNMSj9zY3FgXD9sdUUjbF1RcysnYlBldW9BSSJJJGtkRXMoPGZAQ2RbSjpLYVs0Ujk0bVcvLlE5Q2tYLFhyUU5gS25ASjk0S1wkK3NsRilZRFkxVGpCLU1fUDAxKUcwWjwzNlclJSh1aztZRS9FUSFaVmJNOkZLTVReJD9RY1dZJnM2JF8paT5YYypqIXAkP0ItNk9xWl1cRFdyPWBSPHU0aClcKC1lWi1sRlkuV0UyPWYyYENvRVVyQHUtalgpN3EralxwMi0kPkJkLS8oRkksOzhBZVgiUkxlMTthLi1fcHFJalRNRHIuWjVdNjIrUzVBN1hDWHBKS1JZPy01Zmk7QmlZLz9jI2JnYWMocERPXUBRUWJjT2ZrLWBOLUZNU2dlZDNrVkI3ZzZubWhBayVDa0kyNSR0QmNDY0Y+WzhtRkVhaWAxcEMnJExLYSwhYyNQckVGXms7J0hlaFJDKDZlME03VFVSXmRvb3NeV0BpM0lLW1B1KytkXWwtQlliI1tMNUxGSUBfMGlUVzowUmQ8NikzbXNcTTdgRF4tUFBNXU8kWzR1bkQrKGs4dD4vcSVXV1xZS0IqQjtqTFRgazgwUkVQYjxQI0dZZ1VqanAsUl9PYl9bMUtbYFc9bkQ/cUA+YEVrTEFSTkxTXj8ycVskPzgrJFFcLVJFL2dGPitLL3NXZlQ4cytTRDtPR25CYkA+JW5MM1VqJTEyJjRkVUZWa2JXLDthXWVaRTkkYClcLzhjZT9mJVQ5b0VeYEpvV3NsTSxTLHBEWHUwTy1DXUFYIV5Xczs0Jlh0WkNsKSs8OEZtUzorRXFZLSRIOGFNYl1fJHMoWy10ViImNmVQRllKJkA9WXFvYVFnVm5BbWNtKixBYChUQGBfQ2tVYyZELVZTX2haQjFLQXFxbGQhKWEwbTdyOXJja08lajBRO2FUc2I1R1kqOidmKmZPIjlrYkJCJTZVPEgtKmszPjVKXlc0SDZYZTQ6QEtIbzc2X24oTVFoL1YxZWJLcCxLI050UmJIWVZjaj5rV2ltakRjamV0P2xNJF5VSThcYl5fRjpzQDNiIjE4Nkd0MkgjQiJcYyQyOVUyZ2k1ZE5mUXVPWnBKXlJCWnFHOkBZLm9XLUMyJThcI1osSDRzM2JvJSJnYnVUXVZQJjdOZ0QzTHVMYmk6TDVwYU8rMEQ5XWhXRFFyQGwpcT0hOjBkTSs2M2RRTjV1Jlg0LCclRj5kJD9SV0hcM00zJFI/Jm8pSGZHYjs6RihBa2BrN2daJzxdRExMWXVSME9OaEpHI1c3KDNvUk5PYz9NNWJtMyltP2tfNlA+RzcrK0Rgc1BTUmtUR0dJIS0vdVtKS0hXYFlDUCZmX1dDW1ZyTFloIl1OW10iSV5yWSUybikvUT03X2hNT1VIYSRHLjdkTjM4ZzklP3JHdSdFNUVaQjZxOGRFJVgxLzBkMTJrOkJdNydeKkpbLTleZjgvIzMpalZFXkE6XlRWVDEwamRKInEzOUhXZVNmPDktUWpPJG5HRTYuRWxOV2tSdUdeMVltWTtbRF85cnVBaT4zKm9dX18/UiNIU1knRlArVScjXmk+RTs3aUxAYjk/KWNKQHBJO2lqSCM3Vic1WykmY0pQLi5bUjYqXmMmSWNUakZkQGYrSm03bChsZl9XNHRZKUg0K11GTjRiQUlrTWdgQzlocEk0LCJGUEU/JiQkUSxMWU0tK0koZTwrN3Qtbk4sIVV1XlxmaF9OMlVvOTRGUlxIYyY0R0NUU2JTWzhFTkhycS1dW2lwRlVdM1ZcQzNEXkZsIWpUTHJWKzY3WGBIMDFbYE9pbzZLTVVySk9rK28zKDlRKGxdSllRSixpKXJTYFZjI3U4OypvWl8+KioncWxQN1pebzFpU2txPkdRLmF+PmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDExCjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDA2MSAwMDAwMCBuIAowMDAwMDAwMTAyIDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDMyMSAwMDAwMCBuIAowMDAwMDAwNTI0IDAwMDAwIG4gCjAwMDAwMDA3MjggMDAwMDAgbiAKMDAwMDAwMDc5NiAwMDAwMCBuIAowMDAwMDAxMTA4IDAwMDAwIG4gCjAwMDAwMDExNzMgMDAwMDAgbiAKMDAwMDAwNDAxMCAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9JRCAKWzw0NjZkZGZmNjVmOTQ0YzcxNjE4MGMzMmNmNGM0ZTQwOT48NDY2ZGRmZjY1Zjk0NGM3MTYxODBjMzJjZjRjNGU0MDk+XQolIFJlcG9ydExhYiBnZW5lcmF0ZWQgUERGIGRvY3VtZW50IC0tIGRpZ2VzdCAob3BlbnNvdXJjZSkKCi9JbmZvIDcgMCBSCi9Sb290IDYgMCBSCi9TaXplIDExCj4+CnN0YXJ0eHJlZgo1ODA4CiUlRU9GCg==";
+const canvas = document.getElementById('pad');
+const ctx = canvas.getContext('2d');
+let dibujando = false, hayFirma = false;
+
+function ajustarCanvas() {
+  const r = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    const img = canvas.width ? ctx.getImageData(0, 0, canvas.width, canvas.height) : null;
+    canvas.width = w; canvas.height = h;
+    ctx.scale(dpr, dpr);
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#111';
+    if (img) ctx.putImageData(img, 0, 0);
+  }
+}
+function pos(e) {
+  const r = canvas.getBoundingClientRect();
+  const p = e.touches ? e.touches[0] : e;
+  return { x: p.clientX - r.left, y: p.clientY - r.top };
+}
+function empezar(e) { e.preventDefault(); dibujando = true; hayFirma = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+function mover(e) { if (!dibujando) return; e.preventDefault(); const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+function terminar(e) { if (!dibujando) return; e.preventDefault(); dibujando = false; ctx.closePath(); }
+
+canvas.addEventListener('pointerdown', empezar);
+canvas.addEventListener('pointermove', mover);
+window.addEventListener('pointerup', terminar);
+canvas.addEventListener('touchstart', empezar, {passive:false});
+canvas.addEventListener('touchmove', mover, {passive:false});
+canvas.addEventListener('touchend', terminar, {passive:false});
+
+document.getElementById('limpiar').onclick = () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height); hayFirma = false;
+  document.getElementById('resultado').style.display = 'none';
+};
+
+// fecha de hoy
+const hoy = new Date();
+document.getElementById('fecha').value = hoy.toISOString().slice(0, 10);
+
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+document.getElementById('generar').onclick = async () => {
+  const nombre = document.getElementById('nombre').value.trim();
+  const dni = document.getElementById('dni').value.trim();
+  const dom = document.getElementById('domicilio').value.trim();
+  const f = document.getElementById('fecha').value;
+  if (!nombre || !dni || !dom) { alert('Completá nombre, DNI y domicilio.'); return; }
+  if (!hayFirma) { alert('Falta tu firma con el dedo.'); return; }
+  const btn = document.getElementById('generar'); btn.disabled = true; btn.textContent = 'Generando…';
+  try {
+    const { PDFDocument, StandardFonts, rgb } = PDFLib;
+    const bytes = Uint8Array.from(atob(PDF_B64), c => c.charCodeAt(0));
+    const pdf = await PDFDocument.load(bytes);
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const [p1, p2] = pdf.getPages();
+    const fecha = new Date(f + 'T12:00:00');
+    const dia = String(fecha.getDate()), mes = MESES[fecha.getMonth()], anio = String(fecha.getFullYear());
+
+    const blanco = rgb(1,1,1);
+    // borra el renglón completo y escribe el dato encima
+    const campo = (page, texto, x1, x2, y, size, fnt) => {
+      page.drawRectangle({ x: x1 - 1, y: y - 3, width: (x2 - x1) + 2, height: size + 6, color: blanco });
+      page.drawText(texto, { x: x1, y, size, font: fnt, color: rgb(0.05,0.05,0.05) });
+    };
+
+    // ---- Página 1 (coordenadas medidas del template) ----
+    campo(p1, dia, 175.2, 207.2, 719.6, 9.6, font);
+    campo(p1, mes, 284.5, 391.3, 719.6, 9.6, font);
+    campo(p1, anio, 409.0, 443.7, 719.6, 9.6, font);
+    campo(p1, nombre, 342.6, 524.1, 678.8, 9.6, bold);
+    campo(p1, dni, 108.0, 210.0, 665.2, 9.6, font);
+    campo(p1, dom, 286.1, 470.3, 665.2, 8.6, font);
+    campo(p1, dia + '/' + String(fecha.getMonth()+1).padStart(2,'0') + '/' + anio.slice(2), 136.9, 211.6, 600.8, 9.6, font);
+
+    // ---- Página 2 ----
+    campo(p2, dia, 492.1, 524.1, 610.6, 9.6, font);
+    campo(p2, mes, 141.6, 248.4, 597.0, 9.6, font);
+    campo(p2, anio, 285.2, 319.9, 597.0, 9.6, font);
+    campo(p2, nombre, 153.4, 251.2, 472.0, 8.6, font);
+    campo(p2, dni, 123.8, 257.2, 461.5, 8.6, font);
+
+    // firma
+    const png = canvas.toDataURL('image/png');
+    const img = await pdf.embedPng(png);
+    const maxW = 195, maxH = 44;
+    const esc = Math.min(maxW / img.width, maxH / img.height);
+    const dw = img.width * esc, dh = img.height * esc;
+    p2.drawImage(img, { x: 85 + (maxW - dw)/2, y: 509 + (maxH - dh)/2, width: dw, height: dh });
+
+    // sello de firma
+    const sello = 'Firmado digitalmente por ' + nombre + ' (DNI ' + dni + ') el ' + dia + '/' +
+                  String(fecha.getMonth()+1).padStart(2,'0') + '/' + anio + ' — La Ronda';
+    p2.drawText(sello, { x: 85, y: 496, size: 6.5, font, color: rgb(0.45,0.45,0.45) });
+
+    const out = await pdf.save();
+    window.__lastPdfBytes = Array.from(out);  // para pruebas automatizadas
+    window.__lastPdfName = nombre;
+    const blob = new Blob([out], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.getElementById('descargar');
+    a.href = url;
+    a.download = 'Contrato-La-Ronda-' + nombre.replace(/\s+/g,'-') + '.pdf';
+    document.getElementById('resultado').style.display = 'block';
+    a.click();
+  } catch (err) {
+    alert('Error generando el PDF: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generar contrato';
+  }
+};
+
+window.addEventListener('resize', ajustarCanvas);
+ajustarCanvas();
+</script>
+</body>
+</html>
