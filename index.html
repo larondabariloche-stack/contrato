@@ -61,8 +61,9 @@
 
 <div class="card" id="resultado">
   <p class="ok">✅ ¡Listo! Tu contrato está firmado.</p>
-  <a id="descargar" download="Contrato-La-Ronda-firmado.pdf">⬇️ Descargar contrato firmado</a>
-  <p class="hint" style="margin-top:12px">Después mandanos el PDF por WhatsApp al 294 467-8570.</p>
+  <button id="compartir" style="background:var(--verde);color:#fff;width:100%;margin-top:6px">📤 Enviar a La Ronda</button>
+  <a id="descargar" download="Contrato-La-Ronda-firmado.pdf" style="background:#eee9dc;color:#5a5344;margin-top:10px">⬇️ Descargar una copia</a>
+  <p class="hint" style="margin-top:12px">Si el botón no abre WhatsApp, descargá el PDF y mandalo al 294 467-8570.</p>
 </div>
 
 <footer>La Ronda ONG Cannábica · Rivarola R. Dr. Pje. 111, piso 2, Dto. 6, CABA</footer>
@@ -169,6 +170,8 @@ document.getElementById('generar').onclick = async () => {
     const out = await pdf.save();
     window.__lastPdfBytes = Array.from(out);  // para pruebas automatizadas
     window.__lastPdfName = nombre;
+    const nombreArchivo = 'Contrato-La-Ronda-' + nombre.replace(/\s+/g,'-') + '.pdf';
+    window.__pdfFile = new File([out], nombreArchivo, { type: 'application/pdf' });
     const blob = new Blob([out], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.getElementById('descargar');
@@ -181,6 +184,20 @@ document.getElementById('generar').onclick = async () => {
   } finally {
     btn.disabled = false; btn.textContent = 'Generar contrato';
   }
+};
+
+document.getElementById('compartir').onclick = async () => {
+  const f = window.__pdfFile;
+  if (!f) { alert('Primero generá el contrato.'); return; }
+  const texto = 'Te mando mi contrato de afiliación firmado — La Ronda 🌿';
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      await navigator.share({ files: [f], title: 'Contrato firmado — La Ronda', text: texto });
+      return;
+    }
+  } catch (e) { /* usuario canceló o no soportado */ }
+  // fallback: abrir WhatsApp con mensaje (el archivo queda descargado para adjuntar)
+  window.open('https://wa.me/5492944678570?text=' + encodeURIComponent(texto), '_blank');
 };
 
 window.addEventListener('resize', ajustarCanvas);
