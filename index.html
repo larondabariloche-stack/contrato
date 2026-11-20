@@ -36,7 +36,7 @@
 <header>
   <h1>🌿 Contrato de Afiliación</h1>
   <p>Asociación La Ronda — Adherente Beneficiario</p>
-  <p style="font-size:10px;color:#b0a894;margin-top:6px">versión 19/11 13:50</p>
+  <p style="font-size:10px;color:#b0a894;margin-top:6px">versión 20/11 15:40</p>
 </header>
 
 <div class="card">
@@ -123,6 +123,8 @@ document.getElementById('generar').onclick = async () => {
   const dom = document.getElementById('domicilio').value.trim();
   const f = document.getElementById('fecha').value;
   if (!nombre || !dni || !dom) { alert('Completá nombre, DNI y domicilio.'); return; }
+  if (!/^\d{7,8}$/.test(dni.replace(/[.\s]/g, ''))) { alert('El DNI debe tener 7 u 8 números (sin puntos).'); return; }
+  if (nombre.trim().split(/\s+/).length < 2) { alert('Escribí nombre y apellido completos.'); return; }
   if (!hayFirma) { alert('Falta tu firma con el dedo.'); return; }
   const btn = document.getElementById('generar'); btn.disabled = true; btn.textContent = 'Generando…';
   try {
